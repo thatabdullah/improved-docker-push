@@ -1,0 +1,70 @@
+name: optimized-docker-push
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    build-docker-image:
+        
+        runs-on: ubuntu-latest
+        steps:
+        - name: checkout code
+          uses: actions/checkout@v3
+
+        - name: set up/install docker
+          uses: docker/setup-buildx-action@v2  
+
+        - name: docker login
+          uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+        - name: get image hash from registry
+          id: docker-hub-hash
+          run: |
+            registry_image=$(curl --silent --location \
+            --url "https://registry.hub.docker.com/v2/repositories/ithatabdullah/flaskappimg/tags/latest" \
+            | jq -r '.digest' || echo "failed registry inspect")
+            echo "registry_hash=${registry_image}" >> $GITHUB_ENV
+        
+            
+        - name: ssh EC2
+          id: get-local-image-hash
+          uses: appleboy/ssh-action@v1.2.0
+          with:
+            host: ${{ secrets.HOST }}
+            username: ${{ secrets.username }}
+            key: ${{ secrets.SSH_key }}
+            port: 22
+            script_path: scripts/script.sh     
+    
+        - name: SSH
+          uses: webfactory/ssh-agent@v0.7.0
+          with:
+            ssh-private-key: ${{ secrets.SSH_KEY }}
+        - name: get local image output
+          id: get-local-image-output 
+          run: |
+            rsync -avz -e "ssh -o StrictHostKeyChecking=no" ubuntu@${{ secrets.HOST }}:/home/ubuntu/app/localimage.txt .
+ 
+        
+        - name: store local image value
+          run: |
+            local_hash=$(cat ./localimage.txt)
+            echo "local_hash=${local_hash}" >> $GITHUB_ENV
+            
+
+        - name: compare hashes
+          run: |
+            if [ "${{ env.registry_hash }}" != "${{ env.local_hash }}" ] || \
+              [ "${{ env.registry_hash }}" = "failed registry inspect" ] || \
+              [ "${{ env.local_hash }}" = "failed local inspect" ]; then
+              ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "cd /home/ubuntu/app && docker pull ithatabdullah/flaskappimg:latest && docker build -t flaskappimg:latest && docker run -d flaskappimg:latest"
+
+            else
+              echo "images hashes are identical! no pulling/building required"
+            fi
+
