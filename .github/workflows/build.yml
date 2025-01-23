@@ -62,7 +62,7 @@ jobs:
             if [ "${{ env.registry_hash }}" != "${{ env.local_hash }}" ] || \
               [ "${{ env.registry_hash }}" = "failed registry inspect" ] || \
               [ "${{ env.local_hash }}" = "failed local inspect" ]; then
-              ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "cd /home/ubuntu/app && docker pull ithatabdullah/flaskappimg:latest && docker build -t flaskappimg:latest && docker run -d flaskappimg:latest"
+              ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "cd /home/ubuntu/app && docker pull ithatabdullah/flaskappimg:latest && docker build -t flaskappimg:latest . && docker run -d flaskappimg:latest"
 
             else
               echo "images hashes are identical! no pulling/building required"
