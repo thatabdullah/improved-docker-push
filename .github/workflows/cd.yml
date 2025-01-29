@@ -1,0 +1,39 @@
+name: deploy docker
+on:
+    workflow_run:
+      workflows:
+        - optimized-docker-push
+      types:
+        - completed
+jobs:
+    build-docker-image:
+        
+        runs-on: ubuntu-latest
+        steps:
+        - name: checkout code
+          uses: actions/checkout@v3
+        
+        
+        - name: SSH
+          uses: webfactory/ssh-agent@v0.7.0
+          with:
+            ssh-private-key: ${{ secrets.SSH_KEY }}
+        - name: get status
+          id: get-status
+          run: |
+            rsync -avz -e "ssh -o StrictHostKeyChecking=no" ubuntu@${{ secrets.HOST }}:/home/ubuntu/app/status.txt .
+
+
+        - name: store local image value
+          run: |
+            status=$(cat ./status.txt)
+            echo "status=${status}" >> $GITHUB_ENV
+
+        - name: run container
+          run: |
+              if [ "${{ env.status }}" = "new build" ]; then
+                ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "docker run -p 5000:5000 -d flaskappimg:latest"
+  
+              else
+                echo "images hashes are identical! no pulling/building required"
+              fi    
