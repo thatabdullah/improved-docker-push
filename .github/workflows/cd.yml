@@ -35,5 +35,5 @@ jobs:
                 ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "docker run -p 5000:5000 -d ithatabdullah/flaskappimg:latest"
   
               else
-                echo "images hashes are identical! no pulling/building required"
+                echo "images hashes were identical! no re-running required"
               fi    
