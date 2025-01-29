@@ -32,7 +32,7 @@ jobs:
         - name: run container
           run: |
               if [ "${{ env.status }}" = "new build" ]; then
-                ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "docker run -p 5000:5000 -d flaskappimg:latest"
+                ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "docker run -p 5000:5000 -d ithatabdullah/flaskappimg:latest"
   
               else
                 echo "images hashes are identical! no pulling/building required"

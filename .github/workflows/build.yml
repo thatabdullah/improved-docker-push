@@ -62,7 +62,7 @@ jobs:
             if [ "${{ env.registry_hash }}" != "${{ env.local_hash }}" ] || \
               [ "${{ env.registry_hash }}" = "failed registry inspect" ] || \
               [ "${{ env.local_hash }}" = "failed local inspect" ]; then
-              ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "cd /home/ubuntu/app && docker pull ithatabdullah/flaskappimg:latest && docker build --no-cache -t flaskappimg:latest . && docker image prune -f -a --filter 'until=168h' && echo 'new build' > status.txt"
+              ssh -T -o StrictHostKeyChecking=no ubuntu@${{ secrets.HOST }} "cd /home/ubuntu/app && docker pull ithatabdullah/flaskappimg:latest && docker build --no-cache -t ithatabdullah/flaskappimg:latest . && docker image prune -f -a --filter 'until=168h' && echo 'new build' > status.txt"
               echo "image pulled and built"
 
             else
